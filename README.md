@@ -8,8 +8,6 @@ Tanks 2D is a simple 2D tank shooting game where the player controls a tank, mov
 -   [Usage](#usage)
 -   [Controls](#controls)
 -   [Game Mechanics](#game-mechanics)
--   [Contributing](#contributing)
--   [License](#license)
 
 ## Installation
 
