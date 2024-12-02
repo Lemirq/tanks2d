@@ -1,0 +1,736 @@
+--------------------------------------------------
+File: PlayerTank.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+
+public class PlayerTank extends Rectangle {
+    int vx = 0, vy = 0;
+    int speed = 5;
+    public int score;
+
+    PlayerTank() {
+        this.speed = GamePanel.MOVE_SPEED;
+        this.width = Images.hull.getWidth();
+        this.height = Images.hull.getWidth();
+        this.x = GamePanel.screenWidth / 2 - width / 2;
+        this.y = GamePanel.screenHeight / 2 - width / 2;
+    }
+
+    // public void update() {
+    // x += vx;
+    // y += vy;
+    // }
+
+    public void moveForward() {
+        vx = (int) (speed * Math.cos(Math.toRadians(GamePanel.direction)));
+        vy = (int) (speed * Math.sin(Math.toRadians(GamePanel.direction)));
+        GamePanel.offsetX += vx;
+        GamePanel.offsetY += vy;
+
+        x -= vx;
+        y -= vy;
+    }
+
+    public void moveBackward() {
+        vx = (int) (-speed * Math.cos(Math.toRadians(GamePanel.direction)));
+        vy = (int) (-speed * Math.sin(Math.toRadians(GamePanel.direction)));
+        GamePanel.offsetX += vx;
+        GamePanel.offsetY += vy;
+
+        x -= vx;
+        y -= vy;
+    }
+
+    public void rotateLeft() {
+        GamePanel.direction -= GamePanel.ROTATE_SPEED;
+        if (GamePanel.direction < 0) {
+            GamePanel.direction += 360;
+        }
+    }
+
+    public void rotateRight() {
+        GamePanel.direction += GamePanel.ROTATE_SPEED;
+        if (GamePanel.direction >= 360) {
+            GamePanel.direction -= 360;
+        }
+    }
+
+    public void shoot() {
+        int h = Images.hull.getHeight();
+        int w = Images.hull.getWidth();
+
+        // Calculate the initial position of the bullet based on the tank's position and
+        // direction
+        int bulletX = x + w / 2 + (int) (w / 2 * Math.cos(Math.toRadians(GamePanel.direction)));
+        int bulletY = y + h / 2 + (int) (h / 2 * Math.sin(Math.toRadians(GamePanel.direction)));
+
+        // Calculate the velocity of the bullet based on the direction
+        int bulletVx = (int) (10 * -Math.cos(Math.toRadians(GamePanel.direction)));
+        int bulletVy = (int) (10 * -Math.sin(Math.toRadians(GamePanel.direction)));
+
+        // Print all the values for debugging
+        System.out.println("BulletX: " + bulletX + " BulletY: " + bulletY + " BulletVx: " + bulletVx + " BulletVy: "
+                + bulletVy + " Direction: " + GamePanel.direction);
+
+        // Create a new bullet
+        Bullet b = new Bullet(bulletX, bulletY, 10, 10, bulletVx, bulletVy);
+        GamePanel.bullets.add(b);
+    }
+
+    public void draw(Graphics2D g2d) {
+        // Save the current transform
+        AffineTransform old = g2d.getTransform();
+
+        // Calculate the center of the tank
+        int centerX = GamePanel.screenWidth / 2;
+        int centerY = GamePanel.screenHeight / 2;
+
+        // Apply the rotation transformation around the center of the tank
+        g2d.rotate(Math.toRadians(GamePanel.direction), centerX, centerY);
+
+        // Draw the tank image
+        g2d.drawImage(Images.hull, centerX - Images.hull.getWidth() / 2, centerY - Images.hull.getHeight() / 2, null);
+
+        g2d.setTransform(old);
+        if (GamePanel.debugging) {
+            g2d.drawRect(x, y, width, height);
+        }
+
+    }
+}
+
+--------------------------------------------------
+File: Map.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Graphics2D;
+
+public class Map {
+    public static final int GRID_SIZE = 50;
+
+    void draw(Graphics2D g2d, int width, int height) {
+        for (int x = GamePanel.offsetX % GRID_SIZE - Images.map.getWidth(); x <= width
+                + Images.map.getWidth(); x += GRID_SIZE) {
+            for (int y = GamePanel.offsetY % GRID_SIZE - Images.map.getHeight(); y <= height
+                    + Images.map.getHeight(); y += GRID_SIZE) {
+                g2d.drawImage(Images.map, x, y, null);
+            }
+        }
+    }
+}
+
+
+--------------------------------------------------
+File: KeyEvents.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
+import com.tanks2d.GamePanel.GameState;
+
+public class KeyEvents extends KeyAdapter {
+    boolean released = true;
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int key = e.getKeyCode();
+
+        switch (key) {
+            case KeyEvent.VK_W:
+                GamePanel.upPressed = true;
+                break;
+            case KeyEvent.VK_S:
+                GamePanel.downPressed = true;
+                break;
+            case KeyEvent.VK_A:
+                GamePanel.leftPressed = true;
+                break;
+            case KeyEvent.VK_D:
+                GamePanel.rightPressed = true;
+                break;
+            case KeyEvent.VK_SPACE:
+                if (released) {
+                    GamePanel.shootPressed = true;
+                    released = false;
+                }
+                break;
+            case KeyEvent.VK_R:
+                MainFrame.g.reset();
+                GamePanel.gameState = GameState.MENU;
+                MainFrame.m.setVisible(true);
+                MainFrame.m.requestFocusInWindow();
+                break;
+
+            case KeyEvent.VK_F:
+                GamePanel.debugging = !GamePanel.debugging;
+                break;
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        int key = e.getKeyCode();
+
+        switch (key) {
+            case KeyEvent.VK_W:
+                GamePanel.upPressed = false;
+                break;
+            case KeyEvent.VK_S:
+                GamePanel.downPressed = false;
+                break;
+            case KeyEvent.VK_A:
+                GamePanel.leftPressed = false;
+                break;
+            case KeyEvent.VK_D:
+                GamePanel.rightPressed = false;
+                break;
+            case KeyEvent.VK_SPACE:
+                released = true;
+                break;
+        }
+    }
+}
+
+--------------------------------------------------
+File: Menu.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+
+import com.tanks2d.GamePanel.GameState;
+
+public class Menu extends JPanel implements ActionListener {
+    // draw play button and a combo box for selcting easy, medium, hard difficulty
+    // with SWING components
+    JButton playButton = new JButton("Play");
+    JComboBox<String> difficulty = new JComboBox<String>(new String[] { "Easy (30s)", "Medium (20s)", "Hard (10s)" });
+    JLabel label = new JLabel("Tanks!");
+
+    Menu() {
+        setPreferredSize(new Dimension(GamePanel.screenWidth, GamePanel.screenHeight));
+        // set box layout
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        // set huge font size
+        label.setFont(new Font("Arial", Font.PLAIN, 80));
+        difficulty.setFont(new Font("Arial", Font.PLAIN, 20));
+        playButton.setFont(new Font("Arial", Font.PLAIN, 40));
+
+        playButton.setActionCommand("play");
+        playButton.addActionListener(this);
+        setBorder(new EmptyBorder(200, 200, 200, 200));
+        // add another label explaining the game
+        JLabel l = new JLabel("Use WASD to move and space to shoot");
+        JLabel l1 = new JLabel("Shoot as many cars as you can in the time limit");
+        l.setFont(new Font("Arial", Font.PLAIN, 20));
+        l1.setFont(new Font("Arial", Font.PLAIN, 20));
+
+        add(label);
+        add(l);
+        add(l1);
+
+        // make a jpanel and put difficulty and play button in it, flow layout
+
+        JPanel p = new JPanel();
+        p.setPreferredSize(new Dimension(GamePanel.screenWidth, GamePanel.screenHeight));
+
+        difficulty.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                switch (difficulty.getSelectedIndex()) {
+                    case 0:
+                        GamePanel.totalTime = 30;
+                        break;
+                    case 1:
+                        GamePanel.totalTime = 20;
+                        break;
+                    case 2:
+                        GamePanel.totalTime = 10;
+                        break;
+                }
+            }
+        });
+        p.add(difficulty);
+        p.add(playButton);
+        add(p);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getActionCommand().equals("play")) {
+            GamePanel.gameState = GameState.GAME;
+            MainFrame.m.setVisible(false);
+            MainFrame.g.requestFocusInWindow();
+        }
+    }
+}
+
+
+--------------------------------------------------
+File: Bullet.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
+public class Bullet extends Rectangle {
+    int vx, vy;
+    int startX, startY;
+    int maxD = 1000;
+    public static int v = 1;
+
+    Bullet(int x, int y, int width, int height, int vx, int vy) {
+        super(x, y, width, height);
+        this.startX = x;
+        this.startY = y;
+        this.vx = vx;
+        this.vy = vy;
+    }
+
+    public void update() {
+        x += vx;
+        y += vy;
+    }
+
+    public boolean checkCollision(Rectangle r) {
+        return this.intersects(r);
+    }
+
+    public void draw(Graphics2D g2d) {
+        g2d.setColor(Color.yellow);
+        g2d.fillOval(x + GamePanel.offsetX, y + GamePanel.offsetY, width, height);
+        g2d.setColor(Color.RED);
+        if (GamePanel.debugging) {
+            g2d.drawRect(x, y, width, height);
+        }
+    }
+}
+
+--------------------------------------------------
+File: MainFrame.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Dimension;
+
+import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
+
+public class MainFrame {
+    static JFrame frame;
+    static GamePanel g = new GamePanel();
+    static Menu m = new Menu();
+
+    public MainFrame() {
+        frame = new JFrame();
+        frame.setTitle("Tanks");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setResizable(false);
+        frame.setFocusable(true);
+
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setPreferredSize(new Dimension(GamePanel.screenWidth, GamePanel.screenHeight));
+        layeredPane.add(g, JLayeredPane.DEFAULT_LAYER);
+        g.setBounds(0, 0, GamePanel.screenWidth, GamePanel.screenHeight);
+        layeredPane.add(m, JLayeredPane.PALETTE_LAYER);
+        m.setBounds(0, 0, GamePanel.screenWidth, GamePanel.screenHeight);
+        // frame.setLayeredPane(layeredPane);
+        frame.add(layeredPane);
+
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new MainFrame();
+            }
+        });
+    }
+}
+
+--------------------------------------------------
+File: Images.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
+
+public class Images {
+    public static ArrayList<BufferedImage> explosion = new ArrayList<>();
+    public static BufferedImage[] car = new BufferedImage[4];
+    static BufferedImage hull, bullet, map, track1, track2, shell;
+
+    public static void loadImages() {
+        try {
+            hull = ImageIO.read(Images.class.getResource("/hull.png"));
+            map = scaleImage(ImageIO.read(Images.class.getResource("/map.png")), 50, 50);
+            track1 = ImageIO.read(Images.class.getResource("/track1.png"));
+            track2 = ImageIO.read(Images.class.getResource("/track2.png"));
+            bullet = ImageIO.read(Images.class.getResource("/shell.png"));
+
+            // cars
+            for (int i = 0; i <= 3; i++) {
+                System.out.println("Loading car" + (i + 1) + ".png");
+                car[i] = ImageIO.read(Images.class.getResource("/car" + (i + 1) + ".png"));
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error loading images");
+        }
+    }
+
+    static BufferedImage scaleImage(BufferedImage img, int width, int height) {
+        BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        scaledImage.getGraphics().drawImage(img, 0, 0, width, height, null);
+        return scaledImage;
+    }
+
+    static BufferedImage scaleImage(BufferedImage img, double scale) {
+        BufferedImage scaledImage = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        System.out.println("Scaling to " + scale + " width: " + img.getWidth() * scale + " height: "
+                + img.getHeight() * scale);
+        scaledImage.getGraphics().drawImage(img, 0, 0, (int) (img.getWidth() * scale), (int) (img.getHeight() * scale),
+                null);
+        return scaledImage;
+    }
+}
+
+
+--------------------------------------------------
+File: CollisionManager.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Rectangle;
+import java.util.ArrayList;
+
+public class CollisionManager {
+    ArrayList<Rectangle> collidables = new ArrayList<>();
+
+    void addCollidable(Rectangle r) {
+        collidables.add(r);
+    }
+
+    void removeCollidable(Rectangle r) {
+        collidables.remove(r);
+    }
+
+    public boolean checkCollisions(Rectangle r, ArrayList<Rectangle> newC) {
+        for (Rectangle collidable : newC) {
+            if (r.intersects(collidable)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
+--------------------------------------------------
+File: GamePanel.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
+import java.util.Iterator;
+import javax.swing.JPanel;
+import javax.swing.Timer;
+
+public class GamePanel extends JPanel {
+    public enum GameState {
+        MENU, GAME, GAMEOVER
+    }
+
+    public static boolean debugging = false;
+
+    public static GameState gameState = GameState.MENU;
+    PlayerTank p;
+    // Game variables
+    public static int direction = 0; // Direction of the tank
+    public static int offsetX = 0; // Offset for the grid's X position
+    public static int offsetY = 0; // Offset for the grid's Y position
+    public static int MOVE_SPEED = 6; // Speed of movement
+    public static int ROTATE_SPEED = 1; // Speed of rotation
+    public static AffineTransform oldTransformation;
+    public static int elapsedTime = 0;
+    public static int totalTime = 30;
+    public static int screenWidth = 1200;
+    public static int screenHeight = 900;
+    public static boolean upPressed = false;
+    public static boolean downPressed = false;
+    public static boolean leftPressed = false;
+    public static boolean rightPressed = false;
+    public static boolean shootPressed = false;
+    public static ArrayList<Bullet> bullets = new ArrayList<>();
+    AllCars allCars;
+
+    // Grid variables
+    public static final int[] X_Bounds = { -5000, 5000 };
+    public static final int[] Y_Bounds = { -2000, 2000 };
+    Map map = new Map();
+
+    GamePanel() {
+        System.out.println("GamePanel");
+        setPreferredSize(new Dimension(screenWidth, screenHeight));
+        addKeyListener(new KeyEvents());
+        setFocusable(true);
+        requestFocusInWindow();
+        Images.loadImages();
+        p = new PlayerTank();
+        allCars = new AllCars();
+
+        // new timer
+        Timer timer = new Timer(10, new ActionListener() {
+            // update elapsed time
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (gameState == GameState.MENU) {
+                    return;
+                }
+                if (totalTime - (elapsedTime / 100) <= 0) {
+                    gameState = GameState.GAMEOVER;
+                }
+                elapsedTime++;
+                moveMap();
+                updateBullets();
+                checkCollisions();
+                if (shootPressed) {
+                    p.shoot();
+                    shootPressed = false;
+                }
+                for (Bullet b : bullets) {
+                    b.update();
+                }
+                repaint();
+            }
+        });
+
+        timer.start();
+    }
+
+    public void reset() {
+        offsetX = 0;
+        offsetY = 0;
+        // Reset player tank
+        p = new PlayerTank();
+
+        // Reset all cars
+        allCars = new AllCars();
+
+        // Reset bullets
+        bullets.clear();
+
+        // Reset elapsed time
+        elapsedTime = 0;
+
+        // Reset shoot pressed flag
+        shootPressed = false;
+
+        // Request focus in window again
+        requestFocusInWindow();
+
+        // Repaint the panel to reflect the reset state
+        repaint();
+    }
+
+    void moveMap() {
+        if (upPressed) {
+            System.out.println("up");
+            p.moveForward();
+        }
+        if (downPressed) {
+            System.out.println("down");
+            p.moveBackward();
+        }
+        if (leftPressed) {
+            System.out.println("left");
+            p.rotateLeft();
+        }
+        if (rightPressed) {
+            System.out.println("right");
+            p.rotateRight();
+        }
+    }
+
+    public void updateBullets() {
+        // Update bullets
+        Iterator<Bullet> iterator = bullets.iterator();
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+            bullet.update();
+            if (Math.abs(bullet.getX() - bullet.startX) > bullet.maxD ||
+                    Math.abs(bullet.getY() - bullet.startY) > bullet.maxD) {
+                iterator.remove();
+            }
+        }
+    }
+
+    public void checkCollisions() {
+        // Use an iterator to safely remove elements from the list
+        Iterator<Bullet> bulletIterator = bullets.iterator();
+        while (bulletIterator.hasNext()) {
+            Bullet b = bulletIterator.next();
+            Iterator<Car> carIterator = allCars.cars.iterator();
+            while (carIterator.hasNext()) {
+                Car c = carIterator.next();
+                if (b.intersects(c)) {
+                    carIterator.remove();
+                    bulletIterator.remove();
+                    p.score++;
+                    break; // Exit the inner loop since the bullet is already removed
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        if (gameState == GameState.GAMEOVER) {
+            g2d.setColor(Color.RED);
+            // set big font
+            g2d.setFont(g2d.getFont().deriveFont(50f));
+            g2d.drawString("Game Over", screenWidth / 2 - 100, screenHeight / 2);
+            g2d.setFont(g2d.getFont().deriveFont(30f));
+            g2d.drawString("Your score: " + p.score, screenWidth / 2 - 100, screenHeight / 2 + 50);
+            g2d.drawString("Press R to restart", screenWidth / 2 - 100, screenHeight / 2 + 100);
+            return;
+        }
+
+        // Set the rendering hints
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // set old transformation
+        oldTransformation = g2d.getTransform();
+
+        // Draw the map
+        map.draw(g2d, getWidth(), getHeight());
+        // Draw the cars
+        allCars.draw(g2d);
+        for (Bullet b : bullets) {
+            b.draw(g2d);
+
+            if (debugging) {
+                g2d.drawString("X: " + b.x + " Y: " + b.y + "VX: " + b.vx + " VY: " + b.vy, screenWidth - 90,
+                        bullets.indexOf(b) * 20 + 40);
+            }
+        }
+        p.draw(g2d);
+
+        // Draw the bullets
+        g2d.setColor(Color.RED);
+
+        // debugging
+        // g2d.drawString("X: " + p.x + " Y: " + p.y, 10, 10);
+        // g2d.drawString("OffsetX: " + offsetX + " OffsetY: " + offsetY, 10, 30);
+        // g2d.drawString("Direction: " + direction, 10, 50);
+        // g2d.fillRect(screenWidth - 100, 0, 100, 100);
+
+        // draw left over time
+
+        // top left display score
+        g2d.setColor(Color.black);
+        g2d.fillRect(0, 0, 120, 50);
+        g2d.setColor(Color.white);
+        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        g2d.drawString("Score: " + p.score, 20, 20);
+        g2d.drawString("Time: " + (totalTime - (elapsedTime / 100)), 20, 40);
+    }
+}
+
+--------------------------------------------------
+File: AllCars.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.Random;
+
+public class AllCars {
+    ArrayList<Car> cars = new ArrayList<>();
+    Random random = new Random();
+
+    AllCars() {
+        for (int i = 0; i < 100; i++) {
+            int img = random.nextInt(4);
+            int x = (int) (Math.random() * (GamePanel.X_Bounds[1] - GamePanel.X_Bounds[0])) + GamePanel.X_Bounds[0];
+            int y = (int) (Math.random() * (GamePanel.Y_Bounds[1] - GamePanel.Y_Bounds[0])) + GamePanel.Y_Bounds[0];
+            cars.add(new Car(Images.car[img], x, y));
+        }
+
+    }
+
+    public void draw(Graphics2D g2d) {
+        for (Car car : cars) {
+            car.draw(g2d);
+        }
+    }
+}
+
+
+--------------------------------------------------
+File: Car.java
+--------------------------------------------------
+package com.tanks2d;
+
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.util.Random;
+
+public class Car extends Rectangle {
+    int imgIndex = 0;
+    int rotation; // Rotation in degrees
+    Random random = new Random();
+
+    Car(BufferedImage i, int x, int y) {
+        super(x, y, i.getWidth(), i.getHeight());
+        this.rotation = random.nextInt(360); // Random rotation between 0 and 359 degrees
+    }
+
+    public void draw(Graphics2D g2d) {
+        // this.x = mapX + GamePanel.offsetX;
+        // this.y = mapY + GamePanel.offsetY;
+        // Draw the car image
+        g2d.drawImage(Images.car[imgIndex], x + GamePanel.offsetX, y + GamePanel.offsetY, null);
+        if (GamePanel.debugging)
+            g2d.drawRect(x, y, width, height);
+
+    }
+}
+
