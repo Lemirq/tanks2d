@@ -3,18 +3,18 @@ package com.tanks2d;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 
 public class PlayerTank extends Rectangle {
     int vx = 0, vy = 0;
-    int speed = 20;
+    int speed = 5;
+    public int score;
 
     PlayerTank() {
         this.speed = GamePanel.MOVE_SPEED;
         this.width = Images.hull.getWidth();
-        this.height = Images.hull.getHeight();
+        this.height = Images.hull.getWidth();
         this.x = GamePanel.screenWidth / 2 - width / 2;
-        this.y = GamePanel.screenHeight / 2 - height / 2;
+        this.y = GamePanel.screenHeight / 2 - width / 2;
     }
 
     // public void update() {
@@ -56,20 +56,26 @@ public class PlayerTank extends Rectangle {
         }
     }
 
-    public void shoot(CollisionManager cm) {
+    public void shoot() {
+        int h = Images.hull.getHeight();
+        int w = Images.hull.getWidth();
+
         // Calculate the initial position of the bullet based on the tank's position and
         // direction
-        int bulletX = x + width / 2 + (int) (width / 2 * Math.cos(Math.toRadians(GamePanel.direction)));
-        int bulletY = y + height / 2 + (int) (height / 2 * Math.sin(Math.toRadians(GamePanel.direction)));
+        int bulletX = x + w / 2 + (int) (w / 2 * Math.cos(Math.toRadians(GamePanel.direction)));
+        int bulletY = y + h / 2 + (int) (h / 2 * Math.sin(Math.toRadians(GamePanel.direction)));
 
         // Calculate the velocity of the bullet based on the direction
-        int bulletVx = (int) -(10 * Math.cos(Math.toRadians(GamePanel.direction)));
-        int bulletVy = (int) -(10 * Math.sin(Math.toRadians(GamePanel.direction)));
+        int bulletVx = (int) (10 * -Math.cos(Math.toRadians(GamePanel.direction)));
+        int bulletVy = (int) (10 * -Math.sin(Math.toRadians(GamePanel.direction)));
+
+        // Print all the values for debugging
+        System.out.println("BulletX: " + bulletX + " BulletY: " + bulletY + " BulletVx: " + bulletVx + " BulletVy: "
+                + bulletVy + " Direction: " + GamePanel.direction);
 
         // Create a new bullet
         Bullet b = new Bullet(bulletX, bulletY, 10, 10, bulletVx, bulletVy);
         GamePanel.bullets.add(b);
-        cm.addCollidable(b);
     }
 
     public void draw(Graphics2D g2d) {
@@ -81,22 +87,15 @@ public class PlayerTank extends Rectangle {
         int centerY = GamePanel.screenHeight / 2;
 
         // Apply the rotation transformation around the center of the tank
-        g2d.rotate(Math.toRadians(GamePanel.direction - 90), centerX, centerY);
+        g2d.rotate(Math.toRadians(GamePanel.direction), centerX, centerY);
 
         // Draw the tank image
-        g2d.drawImage(Images.hull, centerX - width / 2, centerY - height / 2, null);
+        g2d.drawImage(Images.hull, centerX - Images.hull.getWidth() / 2, centerY - Images.hull.getHeight() / 2, null);
 
-        // Restore the original transform
-        // create a small polygon square at the mouth of the tank
         g2d.setTransform(old);
-        g2d.drawRect(x, y, width, height);
-        g2d.setTransform(old);
+        if (GamePanel.debugging) {
+            g2d.drawRect(x, y, width, height);
+        }
 
-    }
-
-    public Rectangle2D getBoundingBox() {
-        AffineTransform transform = new AffineTransform();
-        transform.rotate(Math.toRadians(GamePanel.direction), x + width / 2, y + height / 2);
-        return transform.createTransformedShape(new Rectangle2D.Double(x, y, width, height)).getBounds2D();
     }
 }

@@ -13,7 +13,7 @@ public class Images {
 
     public static void loadImages() {
         try {
-            hull = scaleImage(ImageIO.read(Images.class.getResource("/hull.png")), 0.8);
+            hull = ImageIO.read(Images.class.getResource("/hull.png"));
             map = scaleImage(ImageIO.read(Images.class.getResource("/map.png")), 50, 50);
             track1 = ImageIO.read(Images.class.getResource("/track1.png"));
             track2 = ImageIO.read(Images.class.getResource("/track2.png"));

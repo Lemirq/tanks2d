@@ -3,6 +3,8 @@ package com.tanks2d;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
+import com.tanks2d.GamePanel.GameState;
+
 public class KeyEvents extends KeyAdapter {
     boolean released = true;
 
@@ -29,6 +31,16 @@ public class KeyEvents extends KeyAdapter {
                     released = false;
                 }
                 break;
+            case KeyEvent.VK_R:
+                MainFrame.g.reset();
+                GamePanel.gameState = GameState.MENU;
+                MainFrame.m.setVisible(true);
+                MainFrame.m.requestFocusInWindow();
+                break;
+
+            case KeyEvent.VK_F:
+                GamePanel.debugging = !GamePanel.debugging;
+                break;
         }
     }
 
@@ -50,7 +62,6 @@ public class KeyEvents extends KeyAdapter {
                 GamePanel.rightPressed = false;
                 break;
             case KeyEvent.VK_SPACE:
-                GamePanel.shootPressed = false;
                 released = true;
                 break;
         }

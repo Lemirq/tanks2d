@@ -35,10 +35,13 @@ public class Menu extends JPanel implements ActionListener {
         setBorder(new EmptyBorder(200, 200, 200, 200));
         // add another label explaining the game
         JLabel l = new JLabel("Use WASD to move and space to shoot");
+        JLabel l1 = new JLabel("Shoot as many cars as you can in the time limit");
         l.setFont(new Font("Arial", Font.PLAIN, 20));
+        l1.setFont(new Font("Arial", Font.PLAIN, 20));
 
         add(label);
         add(l);
+        add(l1);
 
         // make a jpanel and put difficulty and play button in it, flow layout
 
